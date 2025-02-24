@@ -304,19 +304,96 @@ end;
 
 ### Exibir o Total de Vendas por Vendedor
 
-### Top 10 Clientes que Mais Compraram na Plataforma por
+A query precisou sim de otimização, para evitar um **Nested Loop Join**, e ficou assim:
+
+```sql
+SELECT oi.seller_id, SUM(oi.price) AS total_sales
+FROM order_item oi
+GROUP BY oi.seller_id
+ORDER BY total_sales DESC;
+```
+
+### Top 10 Clientes que Mais Compraram na Plataforma por Período
+
+Também precisou de otimização para evitar um **Nested Loop Join**:
+
+```sql
+SELECT o.customer_id, SUM(oi.price) AS total_sales
+FROM olist.order o
+JOIN order_item oi ON o.order_id = oi.order_id
+WHERE o.order_purchase_timestamp BETWEEN startDate AND endDate
+GROUP BY o.customer_id
+ORDER BY total_sales DESC
+LIMIT 10;
+```
 
 ### Média das Avaliações por Vendedor
 
+Essa também precisa de otimização devido ao uso de Nested Loops e Table Scan nas tabelas, o que gera um custo alto.
+
+```sql
+SELECT s.seller_id, AVG(orv.review_score) AS average_review_score
+FROM seller s
+JOIN order_item oi ON oi.seller_id = s.seller_id
+JOIN olist.order o ON o.order_id = oi.order_id
+JOIN order_review orv ON orv.order_id = o.order_id
+GROUP BY s.seller_id
+ORDER BY average_review_score DESC;
+```
+
+Também são recomendadas as aplicações de alguns índices, como:
+
+```sql
+CREATE INDEX idx_order_item_seller ON order_item (seller_id, order_id);
+CREATE INDEX idx_order_order_id ON olist.order (order_id);
+CREATE INDEX idx_order_review_order_id ON order_review (order_id);
+```
+
 ### Pedidos Realizados entre Duas Datas
+
+Essa query precisa de otimização. O Table Scan na tabela order e o uso de Nested Loops estão causando um alto custo de execução.
+
+```sql
+SELECT o.order_id, o.customer_id, o.order_status, SUM(oi.price) AS total_price
+FROM olist.`order` o
+JOIN order_item oi ON o.order_id = oi.order_id
+WHERE o.order_purchase_timestamp BETWEEN startDate AND endDate
+GROUP BY o.order_id, o.customer_id, o.order_status
+ORDER BY total_price DESC;
+```
+
+Também são recomendadas as aplicações de alguns índices, como:
+
+```sql
+CREATE INDEX idx_order_purchase_timestamp ON olist.`order` (order_purchase_timestamp, order_id);
+CREATE INDEX idx_order_item_order_id ON order_item (order_id);
+```
 
 ### Top 5 Produtos Mais Vendidos no Período
 
+Essa query não necessitou de otimizações!
+
 ### Top 10 Pedidos com Mais Atrasos por Período
+
+Para otimizar, seria possível adicionar índices, como:
+
+```sql
+CREATE INDEX idx_order_purchase_delivered_estimated ON olist.`order` (order_purchase_timestamp, order_delivered_customer_date, order_estimated_delivery_date);
+```
 
 ### Top 10 Clientes com Maior Valor em Compras
 
+Essa query não necessitou de otimizações!
+
 ### Tempo Médio de Entrega por Estado
+
+Para otimizar, seria possível adicionar índices, como:
+
+```sql
+CREATE INDEX idx_customer_id_state ON customer (customer_id, customer_state);
+CREATE INDEX idx_order_delivered_customer_date ON olist.`order` (order_delivered_customer_date, customer_id, order_purchase_timestamp);
+
+```
 
 ## Auditoria
 
