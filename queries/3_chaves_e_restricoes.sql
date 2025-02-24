@@ -52,12 +52,6 @@ add constraint fk_customer_geolocation_zip_code foreign key (
     geolocation_state
 );
 
--- TODO: Create customer unique constraint
-
--- Create customer unique
--- alter table customer
--- add constraint un_customer_unique_id unique (customer_unique_id);
-
 -- Create seller foreign keys
 alter table seller
 add constraint fk_seller_geolocation_zip_code foreign key (
