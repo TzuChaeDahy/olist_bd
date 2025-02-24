@@ -1,4 +1,4 @@
-create user 'user_bi' @'%' identified by 'bipassword'
+create user 'user_bi'@'%' identified by 'bipassword';
 
 grant select on olist.order to 'user_bi' @'%';
 
